@@ -1,7 +1,8 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
 export default function Login() {
@@ -31,36 +32,37 @@ export default function Login() {
   }
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '400px', margin: '0 auto' }}>
-      <h1>Login - CampusMate AI</h1>
+    <div className="container">
+      <h1>Welcome back</h1>
       <form onSubmit={handleLogin}>
-        <div style={{ marginBottom: '1rem' }}>
+        <div className="field">
           <label>Email</label>
-          <br />
           <input
             type="email"
+            className="input"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={{ width: '100%', padding: '0.5rem' }}
           />
         </div>
-        <div style={{ marginBottom: '1rem' }}>
+        <div className="field">
           <label>Password</label>
-          <br />
           <input
             type="password"
+            className="input"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={{ width: '100%', padding: '0.5rem' }}
           />
         </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button type="submit" disabled={loading} style={{ padding: '0.5rem 1rem' }}>
+        {error && <p className="error-text">{error}</p>}
+        <button type="submit" className="btn" disabled={loading}>
           {loading ? 'Logging in...' : 'Login'}
         </button>
       </form>
+      <p className="link-text">
+        Don&apos;t have an account? <Link href="/register">Register</Link>
+      </p>
     </div>
   )
 }

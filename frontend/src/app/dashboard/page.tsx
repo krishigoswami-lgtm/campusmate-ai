@@ -1,7 +1,8 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
 export default function Dashboard() {
@@ -26,12 +27,27 @@ export default function Dashboard() {
   }
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Dashboard</h1>
-      <p>Welcome, {email}</p>
-      <button onClick={handleLogout} style={{ padding: '0.5rem 1rem' }}>
-        Logout
-      </button>
+    <div className="container-wide">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div>
+          <h1 style={{ marginBottom: '0.25rem' }}>Dashboard</h1>
+          <p style={{ color: 'var(--color-text-muted)' }}>Welcome back, {email}</p>
+        </div>
+        <button onClick={handleLogout} className="btn-secondary">
+          Logout
+        </button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+        <Link href="/subjects" className="card" style={{ flexDirection: 'column', alignItems: 'flex-start', cursor: 'pointer' }}>
+          <div className="card-title">Subjects</div>
+          <div className="card-meta">Manage your subjects</div>
+        </Link>
+        <Link href="/assignments" className="card" style={{ flexDirection: 'column', alignItems: 'flex-start', cursor: 'pointer' }}>
+          <div className="card-title">Assignments</div>
+          <div className="card-meta">Track your assignments</div>
+        </Link>
+      </div>
     </div>
   )
 }

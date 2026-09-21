@@ -75,76 +75,70 @@ export default function Subjects() {
     loadSubjects()
   }
 
-  if (loading) return <div style={{ padding: '2rem' }}>Loading...</div>
+  if (loading) return <div className="container-wide">Loading...</div>
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
+    <div className="container-wide">
       <h1>Subjects</h1>
 
-      <form onSubmit={handleAdd} style={{ marginBottom: '2rem' }}>
-        <div style={{ marginBottom: '0.5rem' }}>
+      <form onSubmit={handleAdd} className="card" style={{ flexDirection: 'column', alignItems: 'stretch', marginBottom: '2rem' }}>
+        <div className="field">
+          <label>Subject name</label>
           <input
             type="text"
-            placeholder="Subject name (e.g. Data Structures)"
+            className="input"
+            placeholder="e.g. Data Structures"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            style={{ width: '100%', padding: '0.5rem' }}
           />
         </div>
-        <div style={{ marginBottom: '0.5rem' }}>
+        <div className="field">
+          <label>Subject code (optional)</label>
           <input
             type="text"
-            placeholder="Subject code (optional)"
+            className="input"
+            placeholder="e.g. CS201"
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            style={{ width: '100%', padding: '0.5rem' }}
           />
         </div>
-        <div style={{ marginBottom: '0.5rem' }}>
+        <div className="field">
+          <label>Semester (optional)</label>
           <input
             type="number"
-            placeholder="Semester (optional)"
+            className="input"
             value={semester}
             onChange={(e) => setSemester(e.target.value)}
-            style={{ width: '100%', padding: '0.5rem' }}
           />
         </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button type="submit" style={{ padding: '0.5rem 1rem' }}>
+        {error && <p className="error-text">{error}</p>}
+        <button type="submit" className="btn" style={{ width: 'auto' }}>
           Add Subject
         </button>
       </form>
 
       <h2>Your Subjects</h2>
       {subjects.length === 0 ? (
-        <p>No subjects added yet.</p>
+        <p className="empty-state">No subjects added yet.</p>
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0 }}>
+        <div>
           {subjects.map((subject) => (
-            <li
-              key={subject.id}
-              style={{
-                border: '1px solid #ccc',
-                padding: '1rem',
-                marginBottom: '0.5rem',
-                borderRadius: '4px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
+            <div key={subject.id} className="card">
               <div>
-                <strong>{subject.name}</strong>
-                {subject.code && <span> ({subject.code})</span>}
-                {subject.semester && <span> - Semester {subject.semester}</span>}
+                <div className="card-title">{subject.name}</div>
+                <div className="card-meta">
+                  {subject.code && <span>{subject.code}</span>}
+                  {subject.code && subject.semester && <span> - </span>}
+                  {subject.semester && <span>Semester {subject.semester}</span>}
+                </div>
               </div>
-              <button onClick={() => handleDelete(subject.id)} style={{ padding: '0.25rem 0.5rem' }}>
+              <button onClick={() => handleDelete(subject.id)} className="btn-secondary">
                 Delete
               </button>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   )
