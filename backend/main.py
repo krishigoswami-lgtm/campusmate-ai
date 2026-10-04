@@ -117,7 +117,7 @@ def viva_turn(request: VivaRequest):
 Conversation so far:
 {history_text}
 
-Give brief, encouraging feedback (2-3 sentences) on the student's most recent answer, then ask ONE new related follow-up question on the same topic that has not been asked yet.
+Give brief, encouraging feedback (2-3 sentences) on the student's most recent answer, then ask ONE new related follow-up question on the same topic that has not been asked yet. Keep the question appropriate for the {request.difficulty} difficulty level a typical undergraduate student would face, not research-level.
 
 Return ONLY valid JSON, no other text, in exactly this format:
 {{
@@ -125,7 +125,7 @@ Return ONLY valid JSON, no other text, in exactly this format:
   "next_question": "the next question here"
 }}"""
     else:
-        prompt = f"""You are conducting a spoken viva (oral exam) with a college student on the topic "{request.topic}" at {request.difficulty} difficulty.
+        prompt = f"""You are conducting a spoken viva (oral exam) with a college student on the topic "{request.topic}" at {request.difficulty} difficulty. Keep questions appropriate for a typical undergraduate student at this difficulty level, not research-level.
 
 Ask ONE opening question to begin the viva.
 
@@ -142,5 +142,92 @@ Return ONLY valid JSON, no other text, in exactly this format:
         )
         result = json.loads(response.text)
         return result
+    except genai_errors.ServerError:
+        raise HTTPException(status_code=503, detail="The AI service is currently busy. Please try again in a moment.")
+
+class StudyPlanRequest(BaseModel):
+    subjects: list[str]
+    exam_date: str
+    hours_per_day: int
+
+@app.post("/ai/study-plan")
+def generate_study_plan(request: StudyPlanRequest):
+    subjects_text = ", ".join(request.subjects)
+    prompt = f"""Create a day-by-day study plan for a college student preparing for exams.
+
+Subjects to cover: {subjects_text}
+Exam date: {request.exam_date}
+Available study time: {request.hours_per_day} hours per day
+
+Create a realistic plan from today until the exam date (if the gap is very large, cover a reasonable 7-14 day plan instead). Distribute subjects sensibly across days. Each day should have 2-4 concrete, specific tasks (not vague like "study subject" but specific like "revise binary trees and practice 5 problems").
+
+Return ONLY valid JSON, no other text, in exactly this format:
+[
+  {{
+    "day_label": "Day 1",
+    "tasks": [
+      {{"subject": "subject name", "task": "specific task description"}}
+    ]
+  }}
+]"""
+
+    try:
+        response = generate_with_retry(
+            contents=prompt,
+            config=types.GenerateContentConfig(response_mime_type="application/json"),
+        )
+        plan = json.loads(response.text)
+        return {"plan": plan}
+    except genai_errors.ServerError:
+        raise HTTPException(status_code=503, detail="The AI service is currently busy. Please try again in a moment.")
+
+class SummarizeRequest(BaseModel):
+    content: str
+
+@app.post("/ai/summarize")
+def summarize_notes(request: SummarizeRequest):
+    prompt = f"""Summarize these study notes for a college student.
+
+Notes:
+{request.content}
+
+Return ONLY valid JSON, no other text, in exactly this format:
+{{
+  "summary": "a concise 2-4 sentence summary",
+  "key_points": ["point 1", "point 2", "point 3"],
+  "key_terms": ["term 1", "term 2"]
+}}"""
+
+    try:
+        response = generate_with_retry(
+            contents=prompt,
+            config=types.GenerateContentConfig(response_mime_type="application/json"),
+        )
+        result = json.loads(response.text)
+        return result
+    except genai_errors.ServerError:
+        raise HTTPException(status_code=503, detail="The AI service is currently busy. Please try again in a moment.")
+
+class MistakeRequest(BaseModel):
+    question: str
+    wrong_answer: str
+    correct_answer: str
+
+@app.post("/ai/explain-mistake")
+def explain_mistake(request: MistakeRequest):
+    prompt = f"""A college student answered a question incorrectly. Explain their mistake kindly and clearly.
+
+Question: {request.question}
+Student's answer (incorrect): {request.wrong_answer}
+Correct answer: {request.correct_answer}
+
+Write a short, encouraging explanation (3-4 sentences) of why their answer was wrong and why the correct answer is right. Do not use JSON, just write plain text."""
+
+    try:
+        response = generate_with_retry(
+            contents=prompt,
+            config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+        )
+        return {"explanation": response.text}
     except genai_errors.ServerError:
         raise HTTPException(status_code=503, detail="The AI service is currently busy. Please try again in a moment.")
