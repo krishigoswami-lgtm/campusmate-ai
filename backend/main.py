@@ -95,3 +95,52 @@ Return ONLY a valid JSON array, no other text, in exactly this format:
         return {"questions": questions}
     except genai_errors.ServerError:
         raise HTTPException(status_code=503, detail="The AI service is currently busy. Please try again in a moment.")
+
+class VivaTurn(BaseModel):
+    question: str
+    answer: str
+
+class VivaRequest(BaseModel):
+    topic: str
+    difficulty: str
+    history: list[VivaTurn]
+
+@app.post("/ai/viva")
+def viva_turn(request: VivaRequest):
+    history_text = ""
+    for turn in request.history:
+        history_text += f'Examiner asked: "{turn.question}"\nStudent answered: "{turn.answer}"\n\n'
+
+    if request.history:
+        prompt = f"""You are conducting a spoken viva (oral exam) with a college student on the topic "{request.topic}" at {request.difficulty} difficulty.
+
+Conversation so far:
+{history_text}
+
+Give brief, encouraging feedback (2-3 sentences) on the student's most recent answer, then ask ONE new related follow-up question on the same topic that has not been asked yet.
+
+Return ONLY valid JSON, no other text, in exactly this format:
+{{
+  "feedback": "feedback on the last answer here",
+  "next_question": "the next question here"
+}}"""
+    else:
+        prompt = f"""You are conducting a spoken viva (oral exam) with a college student on the topic "{request.topic}" at {request.difficulty} difficulty.
+
+Ask ONE opening question to begin the viva.
+
+Return ONLY valid JSON, no other text, in exactly this format:
+{{
+  "feedback": null,
+  "next_question": "the opening question here"
+}}"""
+
+    try:
+        response = generate_with_retry(
+            contents=prompt,
+            config=types.GenerateContentConfig(response_mime_type="application/json"),
+        )
+        result = json.loads(response.text)
+        return result
+    except genai_errors.ServerError:
+        raise HTTPException(status_code=503, detail="The AI service is currently busy. Please try again in a moment.")
