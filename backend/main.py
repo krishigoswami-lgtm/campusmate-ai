@@ -186,27 +186,38 @@ class SummarizeRequest(BaseModel):
 
 @app.post("/ai/summarize")
 def summarize_notes(request: SummarizeRequest):
-    prompt = f"""Summarize these study notes for a college student.
+    trimmed_content = request.content[:8000]
+
+    prompt = f"""Summarize these study notes for a college student. Keep your response compact.
 
 Notes:
-{request.content}
+{trimmed_content}
 
-Return ONLY valid JSON, no other text, in exactly this format:
+Return ONLY valid JSON, no other text, no markdown code fences, in exactly this format:
 {{
   "summary": "a concise 2-4 sentence summary",
-  "key_points": ["point 1", "point 2", "point 3"],
-  "key_terms": ["term 1", "term 2"]
-}}"""
+  "key_points": ["point 1", "point 2", "point 3", "point 4", "point 5"],
+  "key_terms": ["term 1", "term 2", "term 3"]
+}}
+
+Keep key_points to at most 5 short items and key_terms to at most 6 items, so the JSON stays short and complete."""
 
     try:
         response = generate_with_retry(
             contents=prompt,
             config=types.GenerateContentConfig(response_mime_type="application/json"),
         )
-        result = json.loads(response.text)
+        raw_text = response.text.strip()
+        if raw_text.startswith("```"):
+            raw_text = raw_text.strip("`")
+            if raw_text.startswith("json"):
+                raw_text = raw_text[4:]
+        result = json.loads(raw_text)
         return result
     except genai_errors.ServerError:
         raise HTTPException(status_code=503, detail="The AI service is currently busy. Please try again in a moment.")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="The AI returned an unexpected format. Please try again, or try with shorter notes.")
 
 class MistakeRequest(BaseModel):
     question: str
